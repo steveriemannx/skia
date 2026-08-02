@@ -88,9 +88,11 @@ private:
     bool generateSVGImage(const SkGlyph&, void* dst);
     bool drawSVGImage(const SkGlyph&, SkCanvas&);
 
+#ifdef SK_CODEC_DECODES_PNG
     bool generatePngMetrics(const SkGlyph&, SkRect*);
     bool generatePngImage(const SkGlyph&, void* dst);
     bool drawPngImage(const SkGlyph&, SkCanvas&);
+#endif
 
     bool generateDWMetrics(const SkGlyph&, DWRITE_RENDERING_MODE, DWRITE_TEXTURE_TYPE, SkRect*);
     const void* getDWMaskBits(const SkGlyph&, DWRITE_RENDERING_MODE, DWRITE_TEXTURE_TYPE);

@@ -119,7 +119,7 @@ template("msvc_toolchain") {
       pdbname = "{{target_out_dir}}/{{label_name}}_c.pdb"
 
       # Label names may have spaces so pdbname must be quoted.
-      command = "$cc_wrapper $cl /nologo /showIncludes /FC {{defines}} {{include_dirs}} {{cflags}} $cl_m32_flag {{cflags_c}} /c {{source}} /Fo{{output}} /Fd\"$pdbname\""
+      command = "$cc_wrapper $cl /nologo /FC {{defines}} {{include_dirs}} {{cflags}} $cl_m32_flag {{cflags_c}} /c {{source}} /Fo{{output}} /Fd\"$pdbname\""
       depsformat = "msvc"
       outputs = [
         "{{source_out_dir}}/{{target_output_name}}.{{source_name_part}}.obj",
@@ -132,7 +132,7 @@ template("msvc_toolchain") {
       pdbname = "{{target_out_dir}}/{{label_name}}_c.pdb"
 
       # Label names may have spaces so pdbname must be quoted.
-      command = "$cc_wrapper $cl /nologo /showIncludes /FC {{defines}} {{include_dirs}} {{cflags}} $cl_m32_flag {{cflags_cc}} /c {{source}} /Fo{{output}} /Fd\"$pdbname\""
+      command = "$cc_wrapper $cl /nologo /FC {{defines}} {{include_dirs}} {{cflags}} $cl_m32_flag {{cflags_cc}} /c {{source}} /Fo{{output}} /Fd\"$pdbname\""
       depsformat = "msvc"
       outputs = [
         "{{source_out_dir}}/{{target_output_name}}.{{source_name_part}}.obj",
@@ -325,6 +325,9 @@ template("gcc_like_toolchain") {
       if (is_mac || is_ios) {
         rpath = "-Wl,-install_name,@rpath/$soname"
       }
+      if (is_mingw) {
+        rpath = ""  # For PE/COFF the soname argument has no effect
+      }
 
       rspfile = "{{output}}.rsp"
       rspfile_content = "{{inputs}}"
@@ -342,11 +345,22 @@ template("gcc_like_toolchain") {
         _end_group = ""
       }
 
-      command = "$link -shared {{ldflags}} $_start_group @$rspfile {{frameworks}} {{solibs}} $_end_group {{libs}} $rpath -o {{output}}"
+      _mingw_flags = ""
+      if (is_mingw) {
+        # Have MinGW linker generate a .def file and a .a import library
+        if (!is_clang) {
+          _mingw_flags += " -Wl,--dll "
+        }
+        _mingw_flags +=
+          " -Wl,--output-def=$soname.def -Wl,--out-implib=$soname.a "
+      }
+      command = "$link -shared {{ldflags}} $_start_group @$rspfile {{frameworks}} {{solibs}} $_end_group $_mingw_flags {{libs}} $rpath -o {{output}}"
       outputs = [ "{{root_out_dir}}/$soname" ]
       output_prefix = "lib"
       if (is_mac || is_ios) {
         default_output_extension = ".dylib"
+      } else if (is_mingw){
+        default_output_extension = ".dll"
       } else {
         default_output_extension = ".so"
       }

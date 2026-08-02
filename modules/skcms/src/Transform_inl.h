@@ -88,7 +88,7 @@ using U8  = V<uint8_t>;
 // x86, GCC tends to pass U16 (4x uint16_t vector) function arguments in the
 // MMX mm0 register, which seems to mess with unrelated code that later uses
 // x87 FP instructions (MMX's mm0 is an alias for x87's st0 register).
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__) || defined(__GNUC__) || defined (__MINGW32__) || (__MINGW64__)
     #define SI static inline __attribute__((always_inline))
 #else
     #define SI static inline
@@ -814,9 +814,15 @@ struct Ctx {
                                                                                 \
         SI void Exec_##name##_k(arg, STAGE_PARAMS(&))
 
+#if defined (__MINGW32__) || (__MINGW64__)
+    #define STAGE(name, arg)                                                                \
+        DECLARE_STAGE(name, arg, return (*list.fn)(list, ctx, src, dst, \
+                                                                       r, g, b, a, i))
+#else
     #define STAGE(name, arg)                                                                \
         DECLARE_STAGE(name, arg, [[clang::musttail]] return (*list.fn)(list, ctx, src, dst, \
                                                                        r, g, b, a, i))
+#endif
 
     #define FINAL_STAGE(name, arg) \
         DECLARE_STAGE(name, arg, /* Stop executing stages and return to the caller. */)

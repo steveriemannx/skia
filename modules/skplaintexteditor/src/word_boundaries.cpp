@@ -52,7 +52,9 @@ std::vector<bool> GetUtf8WordBoundaries(const char* begin, size_t byteCount, con
     std::vector<bool> result;
     result.resize(byteCount);
     for (auto& pos : positions) {
-        result[pos] = true;
+        if (pos < result.size()) {
+            result[pos] = true;
+        }        
     }
     return result;
 }

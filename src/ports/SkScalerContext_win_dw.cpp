@@ -1719,6 +1719,8 @@ static void ReleaseProc(const void* ptr, void* context) {
 }
 }
 
+#ifdef SK_CODEC_DECODES_PNG
+
 static void check_png() {
     SkASSERTF(SkCodecs::HasDecoder("png"),
         "No PNG decoder registered. A call to SkCodecs::Register is necessary.");
@@ -1774,6 +1776,8 @@ bool SkScalerContext_DW::generatePngMetrics(const SkGlyph& glyph, SkRect* bounds
     return true;
 }
 
+#endif
+
 SkScalerContext::GlyphMetrics SkScalerContext_DW::generateMetrics(const SkGlyph& glyph,
                                                                   SkArenaAlloc* alloc) {
     GlyphMetrics mx(glyph.maskFormat());
@@ -1806,13 +1810,14 @@ SkScalerContext::GlyphMetrics SkScalerContext_DW::generateMetrics(const SkGlyph&
             mx.neverRequestPath = true;
             return mx;
         }
-
+#ifdef SK_CODEC_DECODES_PNG
         if (generatePngMetrics(glyph, &mx.bounds)) {
             mx.maskFormat = SkMask::kARGB32_Format;
             mx.extraBits |= ScalerContextBits::PNG;
             mx.neverRequestPath = true;
             return mx;
         }
+#endif
     }
 
     if (this->generateDWMetrics(glyph, fRenderingMode, fTextureType, &mx.bounds)) {
@@ -2280,8 +2285,13 @@ bool SkScalerContext_DW::drawSVGImage(const SkGlyph& glyph, SkCanvas& canvas) {
     }
 
     DWRITE_GLYPH_IMAGE_FORMATS imageFormats;
+#if defined (__MINGW32__) || defined (__MINGW64__)
+    HRBM(fontFace4->GetGlyphImageFormats_(glyph.getGlyphID(), 0, UINT32_MAX, &imageFormats),
+         "Cannot get glyph image formats.");
+#else
     HRBM(fontFace4->GetGlyphImageFormats(glyph.getGlyphID(), 0, UINT32_MAX, &imageFormats),
          "Cannot get glyph image formats.");
+#endif
     if (!(imageFormats & DWRITE_GLYPH_IMAGE_FORMATS_SVG)) {
         return false;
     }
@@ -2344,6 +2354,7 @@ bool SkScalerContext_DW::generateSVGImage(const SkGlyph& glyph, void* imageBuffe
     return this->drawSVGImage(glyph, canvas);
 }
 
+#ifdef SK_CODEC_DECODES_PNG
 bool SkScalerContext_DW::drawPngImage(const SkGlyph& glyph, SkCanvas& canvas) {
     IDWriteFontFace4* fontFace4 = this->getDWriteTypeface()->fDWriteFontFace4.get();
     if (!fontFace4) {
@@ -2381,6 +2392,9 @@ bool SkScalerContext_DW::drawPngImage(const SkGlyph& glyph, SkCanvas& canvas) {
     return true;
 }
 
+#endif
+
+#ifdef SK_CODEC_DECODES_PNG
 bool SkScalerContext_DW::generatePngImage(const SkGlyph& glyph, void* imageBuffer) {
     SkASSERT(glyph.maskFormat() == SkMask::Format::kARGB32_Format);
 
@@ -2396,6 +2410,7 @@ bool SkScalerContext_DW::generatePngImage(const SkGlyph& glyph, void* imageBuffe
 
     return this->drawPngImage(glyph, canvas);
 }
+#endif
 
 void SkScalerContext_DW::generateImage(const SkGlyph& glyph, void* imageBuffer) {
     ScalerContextBits::value_type format = glyph.extraBits();
@@ -2409,8 +2424,10 @@ void SkScalerContext_DW::generateImage(const SkGlyph& glyph, void* imageBuffer) 
         this->generateColorImage(glyph, imageBuffer);
     } else if (format == ScalerContextBits::SVG) {
         this->generateSVGImage(glyph, imageBuffer);
+#ifdef SK_CODEC_DECODES_PNG
     } else if (format == ScalerContextBits::PNG) {
         this->generatePngImage(glyph, imageBuffer);
+#endif
     } else if (format == ScalerContextBits::PATH) {
         this->generateImageFromPath(glyph, imageBuffer);
     } else {

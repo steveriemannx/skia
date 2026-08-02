@@ -1596,7 +1596,7 @@ static void start_pipeline(size_t dx, size_t dy,
     }
 }
 
-#if SK_HAS_MUSTTAIL
+#if SK_HAS_MUSTTAIL && !defined (__MINGW32__) && !defined (__MINGW64__)
     #define SKRP_MUSTTAIL [[clang::musttail]]
 #else
     #define SKRP_MUSTTAIL

@@ -18,7 +18,7 @@ def find_msvc():
     default_dirs = [r'C:\Program Files\Microsoft Visual Studio',
                     r'C:\Program Files (x86)\Microsoft Visual Studio']
     for default_dir in default_dirs:
-      for release in ['2022', '2019', '2017']:
+      for release in ['18', '2022', '2019', '2017']:
         for version in ['Enterprise', 'Professional', 'Community', 'BuildTools', 'Preview']:
           path = os.path.join(default_dir, release, version, 'VC')
           if os.path.isdir(path):

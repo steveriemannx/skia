@@ -2908,7 +2908,7 @@ void Viewer::drawImGui() {
             }
 
             if (fShowSlidePicker) {
-                ImGui::SetNextTreeNodeOpen(true);
+                ImGui::SetNextItemOpen(true, 0);
             }
             if (ImGui::CollapsingHeader("Slide")) {
                 static ImGuiTextFilter filter;

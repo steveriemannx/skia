@@ -279,6 +279,9 @@ static void set_character_bounds(void* context,
         if (codePointCount == 1) {  // single codepoint, fast path.
             cursors[textBegin] = clusterBox;
             continue;
+        } 
+        else if (codePointCount == -1) {
+            continue;
         }
 
         float width = clusterBox.width() / codePointCount;

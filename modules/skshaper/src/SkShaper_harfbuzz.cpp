@@ -903,41 +903,70 @@ void ShaperDrivenWrapper::wrap(char const * const utf8, size_t utf8Bytes,
             bool bestUsesModelForGlyphs = false;
             SkScalar widthLeft = width - line.fAdvance.fX;
 
-            for (int32_t breakIteratorCurrent = breakIterator.next();
-                 !breakIterator.isDone();
-                 breakIteratorCurrent = breakIterator.next())
-            {
-                // TODO: if past a safe to break, future safe to break will be at least as long
+            for (int32_t stage = 0; stage < 2; ++stage) {
+                std::vector<int32_t> breakIterators;
+                if (stage == 0) {
+                    for (int32_t breakIteratorCurrent = breakIterator.next();
+                         !breakIterator.isDone();
+                         breakIteratorCurrent = breakIterator.next()) {
+                        breakIterators.push_back(breakIteratorCurrent);
+                    }
+                } else {
+                    for (int32_t breakIteratorCurrent = 1;
+                         (breakIteratorCurrent - 1) < utf8runLength;
+                         breakIteratorCurrent++) {
+                        breakIterators.push_back(breakIteratorCurrent);
+                    }
+                }
 
-                // TODO: adjust breakIteratorCurrent by ignorable whitespace
-                bool candidateUsesModelForGlyphs = false;
-                ShapedRun candidate = [&](const TextProps& props){
-                    if (props.glyphLen) {
-                        candidateUsesModelForGlyphs = true;
-                        return ShapedRun(RunHandler::Range(utf8Start - utf8, breakIteratorCurrent),
-                                         font.currentFont(), bidi.currentLevel(),
-                                         script.currentScript(), language.currentLanguage(),
-                                         std::unique_ptr<ShapedGlyph[]>(),
-                                         props.glyphLen - modelGlyphOffset,
-                                         props.advance - modelAdvanceOffset);
-                    } else {
-                        return shape(utf8, utf8Bytes,
-                                     utf8Start, utf8Start + breakIteratorCurrent,
-                                     bidi, language, script, font,
-                                     features, featuresSize);
-                    }
-                }(modelText[breakIteratorCurrent + modelTextOffset]);
-                auto score = [widthLeft](const ShapedRun& run) -> SkScalar {
-                    if (run.fAdvance.fX < widthLeft) {
-                        return run.fUtf8Range.size();
-                    } else {
-                        return widthLeft - run.fAdvance.fX;
-                    }
-                };
-                if (bestIsInvalid || score(best) < score(candidate)) {
-                    best = std::move(candidate);
-                    bestIsInvalid = false;
-                    bestUsesModelForGlyphs = candidateUsesModelForGlyphs;
+                const size_t breakIteratorCount = breakIterators.size();
+                for (size_t index = 0; index < breakIteratorCount; ++index) {
+                    int32_t breakIteratorCurrent = breakIterators[index];
+                    // TODO: if past a safe to break, future safe to break will be at least as long
+
+                    // TODO: adjust breakIteratorCurrent by ignorable whitespace
+                    bool candidateUsesModelForGlyphs = false;
+                    ShapedRun candidate = [&](const TextProps& props) {
+                        if (props.glyphLen) {
+                            candidateUsesModelForGlyphs = true;
+                            return ShapedRun(
+                                    RunHandler::Range(utf8Start - utf8, breakIteratorCurrent),
+                                    font.currentFont(),
+                                    bidi.currentLevel(),
+                                    std::unique_ptr<ShapedGlyph[]>(),
+                                    props.glyphLen - modelGlyphOffset,
+                                    props.advance - modelAdvanceOffset);
+                        } else {
+                            return shape(utf8,
+                                         utf8Bytes,
+                                         utf8Start,
+                                         utf8Start + breakIteratorCurrent,
+                                         bidi,
+                                         language,
+                                         script,
+                                         font,
+                                         features,
+                                         featuresSize);
+                        }
+                    }(modelText[breakIteratorCurrent + modelTextOffset]);
+                    auto score = [widthLeft](const ShapedRun& run) -> SkScalar {
+                        if (run.fAdvance.fX < widthLeft) {
+                            return run.fUtf8Range.size();
+                        } else {
+                            return widthLeft - run.fAdvance.fX;
+                        }
+                    };
+                    if (bestIsInvalid || score(best) < score(candidate)) {
+                        best = std::move(candidate);
+                        bestIsInvalid = false;
+                        bestUsesModelForGlyphs = candidateUsesModelForGlyphs;
+                    }                    
+                }
+                if (width < line.fAdvance.fX + best.fAdvance.fX) {
+                    bestIsInvalid = true;
+                    bestUsesModelForGlyphs = false;
+                } else {
+                    break;
                 }
             }
 

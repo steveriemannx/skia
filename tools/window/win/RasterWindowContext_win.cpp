@@ -50,9 +50,19 @@ void RasterWindowContext_win::setDisplayParams(std::unique_ptr<const DisplayPara
 }
 
 void RasterWindowContext_win::resize(int w, int h) {
+    if (w < 0) {
+        w = 0;
+    }
+    if (h < 0) {
+        h = 0;
+    }
     fWidth = w;
     fHeight = h;
     fBackbufferSurface.reset();
+    if ((w == 0) || (h == 0)) {
+        return;
+    }
+
     const size_t bmpSize = sizeof(BITMAPINFOHEADER) + w * h * sizeof(uint32_t);
     fSurfaceMemory.reset(bmpSize);
     BITMAPINFO* bmpInfo = reinterpret_cast<BITMAPINFO*>(fSurfaceMemory.get());

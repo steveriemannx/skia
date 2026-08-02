@@ -74,6 +74,11 @@ is_win = current_os == "win"
 # Dawn has references to fuchsia, but Skia's GN rules do not
 is_fuchsia = false
 
+# Set to true when compiling with the MinGW GCC compiler on the MSYS2 environment
+is_mingw = exec_script("//gn/is_mingw.py",
+                [cc],
+                "value")
+
 # This is just to make the Dawn build files happy. Skia itself uses target_os = "linux"
 # for ChromeOS, so this variable will not affect Skia proper.
 is_chromeos = false
@@ -128,7 +133,7 @@ if (is_android) {
   }
 }
 
-if (target_os == "win") {
+if (target_os == "win" && !is_mingw) {
   # By default we look for 2017 (Enterprise, Pro, and Community), then 2015. If MSVC is installed in a
   # non-default location, you can set win_vc to inform us where it is.
 
@@ -139,7 +144,7 @@ if (target_os == "win") {
                         # directory.
 }
 
-if (target_os == "win") {
+if (target_os == "win" && !is_mingw) {
   if (win_toolchain_version == "") {
     win_toolchain_version = exec_script("//gn/highest_version_dir.py",
                                         [
@@ -233,7 +238,7 @@ if (!is_official_build) {
       [ "//gn/skia:warnings_for_public_headers" ]
 }
 
-if (is_win) {
+if (is_win && !is_mingw) {
   # Windows tool chain
   set_default_toolchain("//gn/toolchain:msvc")
   default_toolchain_name = "msvc"

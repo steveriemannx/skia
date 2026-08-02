@@ -137,7 +137,11 @@
 #endif
 
 [[noreturn]] SK_API inline void sk_print_index_out_of_bounds(size_t i, size_t size) {
+#if defined (__MINGW32__) || defined (__MINGW64__)
+    SK_ABORT("Index (%llu) out of bounds for size %llu.\n", (unsigned long long)i, (unsigned long long)size);
+#else
     SK_ABORT("Index (%zu) out of bounds for size %zu.\n", i, size);
+#endif
 }
 
 template <typename T> SK_API inline T sk_collection_check_bounds(T i, T size) {
@@ -155,7 +159,11 @@ template <typename T> SK_API inline T sk_collection_check_bounds(T i, T size) {
 }
 
 [[noreturn]] SK_API inline void sk_print_length_too_big(size_t i, size_t size) {
+#if defined (__MINGW32__) || defined (__MINGW64__)
+    SK_ABORT("Length (%llu) is too big for size %llu.\n", (unsigned long long)i, (unsigned long long)size);
+#else
     SK_ABORT("Length (%zu) is too big for size %zu.\n", i, size);
+#endif
 }
 
 template <typename T> SK_API inline T sk_collection_check_length(T i, T size) {
@@ -183,7 +191,11 @@ SK_API inline void sk_collection_not_empty(bool empty) {
 }
 
 [[noreturn]] SK_API inline void sk_print_size_too_big(size_t size, size_t maxSize) {
+#if defined (__MINGW32__) || defined (__MINGW64__)
+    SK_ABORT("Size (%llu) can't be represented in bytes. Max size is %llu.\n", (unsigned long long)size, (unsigned long long)maxSize);
+#else
     SK_ABORT("Size (%zu) can't be represented in bytes. Max size is %zu.\n", size, maxSize);
+#endif
 }
 
 template <typename T>
