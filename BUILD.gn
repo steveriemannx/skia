@@ -2108,15 +2108,12 @@ action("skia.h") {
   skia_h = "$target_gen_dir/skia.h"
   script = "gn/find_headers.py"
 
-  if (is_win) {
-    args = [ rebase_path("//bin/gn") ] + [ rebase_path("//") ] +
-           [ rebase_path(skia_h, root_build_dir) ] +
-             rebase_path(skia_public_includes)
-  } else {
-    args = [ "gn" ] + [ rebase_path("//") ] +
-           [ rebase_path(skia_h, root_build_dir) ] +
-             rebase_path(skia_public_includes)
-  }
+  # Use "gn" from PATH on every platform - the dui build provides its own gn
+  # there (skia's bin/fetch-gn is not run by the dui flow), so no copy into
+  # bin/ is needed and there is no ambiguity about the binary's origin.
+  args = [ "gn" ] + [ rebase_path("//") ] +
+         [ rebase_path(skia_h, root_build_dir) ] +
+         rebase_path(skia_public_includes)
   depfile = "$skia_h.deps"
   outputs = [ skia_h ]
 }
